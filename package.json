@@ -1,0 +1,79 @@
+{
+  "name": "code2prompt",
+  "displayName": "Code2Prompt",
+  "description": "Export project code to clipboard for LLMs with source tree",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "code2prompt.exportToClipboard",
+        "title": "Export Project to Clipboard for LLM"
+      },
+      {
+        "command": "code2prompt.previewExport",
+        "title": "Preview LLM Export"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "code2prompt.exportToClipboard",
+          "group": "code2prompt",
+          "when": "explorerResourceIsFolder"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Code2Prompt",
+      "properties": {
+        "code2prompt.maxOutputSize": {
+          "type": "number",
+          "default": 1000000,
+          "description": "Maximum size of output before splitting (in characters)"
+        },
+        "code2prompt.useMarkdownBlocks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Wrap file contents in markdown code blocks"
+        },
+        "code2prompt.treeDepth": {
+          "type": "number",
+          "default": -1,
+          "description": "Maximum depth for source tree (-1 for unlimited)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.2.0",
+    "typescript": "^5.3.3",
+    "@vscode/test-electron": "^2.3.8"
+  },
+  "dependencies": {
+    "ignore": "^5.3.0"
+  }
+}

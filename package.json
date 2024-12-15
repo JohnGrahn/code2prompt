@@ -10,25 +10,70 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:code2promptExplorer"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "code2prompt.exportToClipboard",
-        "title": "Export Project to Clipboard for LLM"
+        "title": "Export Project to Clipboard for LLM",
+        "icon": "$(export)"
       },
       {
         "command": "code2prompt.previewExport",
-        "title": "Preview LLM Export"
+        "title": "Preview LLM Export",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "code2prompt.toggleSelection",
+        "title": "Toggle File Selection"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "code2prompt-explorer",
+          "title": "Code2Prompt",
+          "icon": "$(files)"
+        }
+      ]
+    },
+    "views": {
+      "code2prompt-explorer": [
+        {
+          "id": "code2promptExplorer",
+          "name": "Files to Export",
+          "icon": "$(files)",
+          "contextualTitle": "Code2Prompt Files"
+        }
+      ]
+    },
     "menus": {
       "explorer/context": [
         {
           "command": "code2prompt.exportToClipboard",
           "group": "code2prompt",
           "when": "explorerResourceIsFolder"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "code2prompt.exportToClipboard",
+          "when": "view == code2promptExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "code2prompt.previewExport",
+          "when": "view == code2promptExplorer",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "code2prompt.toggleSelection",
+          "when": "view == code2promptExplorer"
         }
       ]
     },

@@ -1,46 +1,52 @@
 import * as vscode from "vscode";
-import {
-	getFiles,
-	getGitignoreRules,
-	getWorkspaceRoot,
-} from "../utils/fileSystem";
 import { formatOutput } from "../utils/format";
+import { getFiles, getGitignoreRules, getWorkspaceRoot } from "../utils/fileSystem";
+import * as path from "path";
 
-export async function previewExport(resource?: vscode.Uri): Promise<void> {
+export async function previewExport(selectedPaths: string[]): Promise<void> {
 	const workspaceRoot = getWorkspaceRoot();
 	const config = vscode.workspace.getConfiguration("code2prompt");
-
-	// Get starting directory (workspace root or selected folder)
-	const startPath = resource?.fsPath || workspaceRoot;
 
 	// Get .gitignore rules
 	const ignoreRules = await getGitignoreRules(workspaceRoot);
 
-	// Allow user to override .gitignore
-	const includeIgnored =
-		(await vscode.window.showQuickPick(["Yes", "No"], {
-			placeHolder: "Include files ignored by .gitignore?",
-		})) === "Yes";
+	// Get all files from selected paths
+	let allFiles: string[] = [];
+	
+	for (const selectedPath of selectedPaths) {
+		console.log('Processing selected path:', selectedPath);
+		try {
+			const stat = await vscode.workspace.fs.stat(vscode.Uri.file(selectedPath));
+			if (stat.type === vscode.FileType.Directory) {
+				// If it's a directory, get all files within it
+				const files = await getFiles(selectedPath, ignoreRules, true);
+				console.log('Found files in directory:', files);
+				allFiles = [...allFiles, ...files];
+			} else {
+				// If it's a file, add it directly
+				console.log('Adding single file:', selectedPath);
+				allFiles.push(selectedPath);
+			}
+		} catch (error) {
+			console.error('Error processing path:', selectedPath, error);
+			throw new Error(`Error processing path ${selectedPath}: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
 
-	// Get all files
-	const files = await getFiles(startPath, ignoreRules, includeIgnored);
-
-	if (files.length === 0) {
+	if (allFiles.length === 0) {
 		throw new Error("No files found to preview");
 	}
 
+	console.log('All files to preview:', allFiles);
+
 	// Format the output
 	const useMarkdown = config.get<boolean>("useMarkdownBlocks", true);
-	const output = await formatOutput(files, workspaceRoot, useMarkdown);
+	const output = await formatOutput(allFiles, workspaceRoot, useMarkdown);
 
-	// Create and show preview document
-	const document = await vscode.workspace.openTextDocument({
+	// Create and show the preview
+	const doc = await vscode.workspace.openTextDocument({
 		content: output,
-		language: useMarkdown ? "markdown" : "plaintext",
+		language: 'markdown'
 	});
-
-	await vscode.window.showTextDocument(document, {
-		preview: true,
-		viewColumn: vscode.ViewColumn.Beside,
-	});
+	await vscode.window.showTextDocument(doc, { preview: true, viewColumn: vscode.ViewColumn.Beside });
 }

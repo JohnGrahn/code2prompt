@@ -8,12 +8,9 @@ import {
 } from "../utils/fileSystem";
 import { formatOutput } from "../utils/format";
 
-export async function exportToClipboard(resource?: vscode.Uri): Promise<void> {
+export async function exportToClipboard(selectedPaths: string[]): Promise<void> {
 	const workspaceRoot = getWorkspaceRoot();
 	const config = vscode.workspace.getConfiguration("code2prompt");
-
-	// Get starting directory (workspace root or selected folder)
-	const startPath = resource?.fsPath || workspaceRoot;
 
 	// Get .gitignore rules
 	const ignoreRules = await getGitignoreRules(workspaceRoot);
@@ -24,16 +21,20 @@ export async function exportToClipboard(resource?: vscode.Uri): Promise<void> {
 			placeHolder: "Include files ignored by .gitignore?",
 		})) === "Yes";
 
-	// Get all files
-	const files = await getFiles(startPath, ignoreRules, includeIgnored);
+	// Get all files from selected paths
+	let allFiles: string[] = [];
+	for (const selectedPath of selectedPaths) {
+		const files = await getFiles(selectedPath, ignoreRules, includeIgnored);
+		allFiles = [...allFiles, ...files];
+	}
 
-	if (files.length === 0) {
+	if (allFiles.length === 0) {
 		throw new Error("No files found to export");
 	}
 
 	// Format the output
 	const useMarkdown = config.get<boolean>("useMarkdownBlocks", true);
-	const output = await formatOutput(files, workspaceRoot, useMarkdown);
+	const output = await formatOutput(allFiles, workspaceRoot, useMarkdown);
 
 	// Handle large output
 	const maxSize = config.get<number>("maxOutputSize", 1000000);

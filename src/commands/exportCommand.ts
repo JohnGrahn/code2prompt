@@ -17,7 +17,7 @@ export async function exportToClipboard(selectedPaths: string[]): Promise<void> 
 
 	// Allow user to override .gitignore
 	const includeIgnored =
-		(await vscode.window.showQuickPick(["Yes", "No"], {
+		(await vscode.window.showQuickPick(["No", "Yes"], {
 			placeHolder: "Include files ignored by .gitignore?",
 		})) === "Yes";
 

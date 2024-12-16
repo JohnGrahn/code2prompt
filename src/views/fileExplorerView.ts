@@ -103,6 +103,7 @@ export class FileExplorerProvider implements vscode.TreeDataProvider<FileItem> {
         
         if (fs.existsSync(gitignorePath)) {
             const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+            console.log('Loaded .gitignore content:', gitignoreContent);
             ig.add(gitignoreContent);
         }
         
@@ -122,15 +123,26 @@ export class FileExplorerProvider implements vscode.TreeDataProvider<FileItem> {
                 const filePath = path.join(dir, file);
                 const relativePath = path.relative(this.workspaceRoot, filePath);
                 
-                if (ig.ignores(relativePath)) {
+                const isIgnored = ig.ignores(relativePath) || ig.ignores(relativePath + '/');
+                console.log(`Checking path: ${relativePath} (isIgnored: ${isIgnored})`);
+                
+                if (isIgnored) {
+                    console.log('Skipping ignored path:', relativePath);
                     continue;
                 }
                 
                 const stat = fs.statSync(filePath);
-                results.push(filePath);
                 
                 if (stat.isDirectory()) {
+                    const dirPathWithSlash = relativePath + '/';
+                    if (ig.ignores(dirPathWithSlash)) {
+                        console.log('Skipping ignored directory:', dirPathWithSlash);
+                        continue;
+                    }
+                    results.push(filePath);
                     results = results.concat(getAllPaths(filePath));
+                } else {
+                    results.push(filePath);
                 }
             }
             
@@ -138,6 +150,7 @@ export class FileExplorerProvider implements vscode.TreeDataProvider<FileItem> {
         };
 
         const allPaths = getAllPaths(this.workspaceRoot);
+        console.log('Final selected paths:', allPaths);
         this.selectedItems = new Map(allPaths.map(path => [path, true]));
         this._onDidChangeTreeData.fire();
     }

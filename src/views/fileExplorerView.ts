@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as ignore from 'ignore';
 
 export class FileExplorerProvider implements vscode.TreeDataProvider<FileItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<FileItem | undefined | null | void> = new vscode.EventEmitter<FileItem | undefined | null | void>();
@@ -94,6 +95,51 @@ export class FileExplorerProvider implements vscode.TreeDataProvider<FileItem> {
         
         console.log('Getting selected items:', selectedPaths);
         return selectedPaths;
+    }
+
+    private getGitignore(): ignore.Ignore {
+        const ig = ignore.default();
+        const gitignorePath = path.join(this.workspaceRoot, '.gitignore');
+        
+        if (fs.existsSync(gitignorePath)) {
+            const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+            ig.add(gitignoreContent);
+        }
+        
+        ig.add(['.git', 'node_modules']);
+        
+        return ig;
+    }
+
+    async selectAll(): Promise<void> {
+        const ig = this.getGitignore();
+        
+        const getAllPaths = (dir: string): string[] => {
+            let results: string[] = [];
+            const list = fs.readdirSync(dir);
+            
+            for (const file of list) {
+                const filePath = path.join(dir, file);
+                const relativePath = path.relative(this.workspaceRoot, filePath);
+                
+                if (ig.ignores(relativePath)) {
+                    continue;
+                }
+                
+                const stat = fs.statSync(filePath);
+                results.push(filePath);
+                
+                if (stat.isDirectory()) {
+                    results = results.concat(getAllPaths(filePath));
+                }
+            }
+            
+            return results;
+        };
+
+        const allPaths = getAllPaths(this.workspaceRoot);
+        this.selectedItems = new Map(allPaths.map(path => [path, true]));
+        this._onDidChangeTreeData.fire();
     }
 }
 

@@ -90,10 +90,19 @@ export function activate(context: vscode.ExtensionContext) {
 		},
 	);
 
+	const selectAllDisposable = vscode.commands.registerCommand(
+		'code2prompt.selectAll',
+		async () => {
+			console.log('Selecting all files (excluding .gitignore entries)');
+			await fileExplorerProvider.selectAll();
+		}
+	);
+
 	context.subscriptions.push(
 		exportDisposable,
 		previewDisposable,
 		toggleSelectionDisposable,
+		selectAllDisposable,
 		treeView
 	);
 }
